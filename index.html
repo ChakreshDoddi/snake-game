@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nokia Snake — 3D</title>
+  <meta name="color-scheme" content="dark light" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <h1>Snake <span class="badge">3D</span></h1>
+      <div class="hud">
+        <span>Score: <strong id="score">0</strong></span>
+        <span>Best: <strong id="best">0</strong></span>
+      </div>
+    </header>
+
+    <!-- 3D frame -->
+    <section class="stage">
+      <div class="frame">
+        <canvas id="board" width="420" height="420" aria-label="Snake Game"></canvas>
+        <div class="glass-glow"></div>
+        <div class="edge-left"></div>
+        <div class="edge-bottom"></div>
+      </div>
+    </section>
+
+    <!-- Menu (game waits here until Start) -->
+    <div class="menu">
+      <button id="btnStart" class="btn3d primary">▶ Start</button>
+      <button id="btnRestart" class="btn3d">↻ Restart</button>
+      <button id="btnPause" class="btn3d">⏸ Pause</button>
+    </div>
+
+    <!-- Touch controls (mobile-friendly) -->
+    <footer class="controls">
+      <button class="pad3d" data-dir="left"  aria-label="Left">←</button>
+      <div class="vstack">
+        <button class="pad3d" data-dir="up"    aria-label="Up">↑</button>
+        <button class="pad3d" data-dir="down"  aria-label="Down">↓</button>
+      </div>
+      <button class="pad3d" data-dir="right" aria-label="Right">→</button>
+    </footer>
+
+    <p class="tip">Keys: ↑ ↓ ← → / WASD · Start: Button or Space · Pause/Resume: Space · Restart: R</p>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
