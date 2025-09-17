@@ -20,7 +20,7 @@
     <!-- 3D frame -->
     <section class="stage">
       <div class="frame">
-        <canvas id="board" width="420" height="420" aria-label="Snake Game"></canvas>
+        <canvas id="board" width="420" height="420"></canvas>
         <div class="glass-glow"></div>
         <div class="edge-left"></div>
         <div class="edge-bottom"></div>
@@ -28,11 +28,15 @@
     </section>
 
     <!-- Menu (game waits here until Start) -->
+     <div class="menu">
+  <button id="btnRestart" class="btn3d danger">↻ Restart</button>
+</div>
     <div class="menu">
       <button id="btnStart" class="btn3d primary">▶ Start</button>
-      <button id="btnRestart" class="btn3d">↻ Restart</button>
       <button id="btnPause" class="btn3d">⏸ Pause</button>
     </div>
+
+    
 
     <!-- Touch controls (mobile-friendly) -->
     <footer class="controls">

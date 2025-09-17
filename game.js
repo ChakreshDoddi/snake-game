@@ -5,10 +5,21 @@ const scoreEl = document.getElementById("score");
 const bestEl  = document.getElementById("best");
 
 // ===== Grid & Speed (constant, Nokia style) =====
-const CELL = 21;                                   // px per cell
-const COLS = Math.floor(canvas.width / CELL);
-const ROWS = Math.floor(canvas.height / CELL);
-let   speedMs = 240;                               // CONSTANT speed; tweak here (ms per step)
+const COLS = 21;                     // logical grid is 21 x 21 (fixed)
+const ROWS = 21;
+let   CELL = 21;                     // pixel size per cell (computed on resize)
+let   speedMs = 140;                 // constant speed (ms per step)
+
+// ===== Responsive canvas =====
+function resizeCanvas() {
+  // match CSS layout size; keep a perfect square
+  const size = Math.min(canvas.clientWidth, canvas.clientHeight || canvas.clientWidth);
+  canvas.width  = size;
+  canvas.height = size;
+  CELL = canvas.width / COLS;        // recompute pixel cell size after resize
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas(); // initial
 
 // ===== State =====
 let snake, dir, nextDir, food, score, best, timer, running, over;
@@ -28,18 +39,18 @@ function updateHUD() {
   bestEl.textContent  = best;
 }
 
-// Draw one rounded cell with fallback if roundRect not supported
+// Rounded cell with fallback
 function drawCell(cx, cy, color) {
-  const pad = 3;
+  const pad = Math.max(2, CELL * 0.14);
   const x = cx * CELL + pad;
   const y = cy * CELL + pad;
   const w = CELL - 2 * pad;
   const h = CELL - 2 * pad;
-  const r = 6;
+  const r = Math.min(10, CELL * 0.3);
 
   ctx.fillStyle = color;
   ctx.strokeStyle = "rgba(0,0,0,.25)";
-  ctx.lineWidth = 1;
+  ctx.lineWidth = Math.max(1, CELL * 0.04);
 
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -66,22 +77,21 @@ function drawCell(cx, cy, color) {
 function drawAll() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Food (3D bead look: base + highlight)
+  // Food (3D bead)
   drawCell(food.x, food.y, "#22c55e");
   ctx.fillStyle = "rgba(255,255,255,.18)";
   ctx.beginPath();
-  ctx.arc(food.x * CELL + CELL * 0.58, food.y * CELL + CELL * 0.42, 3.2, 0, Math.PI*2);
+  ctx.arc(food.x * CELL + CELL * 0.58, food.y * CELL + CELL * 0.42, Math.max(2, CELL * 0.15), 0, Math.PI * 2);
   ctx.fill();
 
-  // Snake (head vivid, body lighter)
+  // Snake
   snake.forEach((seg, i) => {
     const color = i === 0 ? "#7c5cff" : "#a9b1ff";
     drawCell(seg.x, seg.y, color);
-    // tiny head gloss
     if (i === 0) {
       ctx.fillStyle = "rgba(255,255,255,.18)";
       ctx.beginPath();
-      ctx.arc(seg.x * CELL + CELL * 0.58, seg.y * CELL + CELL * 0.38, 3, 0, Math.PI*2);
+      ctx.arc(seg.x * CELL + CELL * 0.58, seg.y * CELL + CELL * 0.38, Math.max(2, CELL * 0.14), 0, Math.PI * 2);
       ctx.fill();
     }
   });
@@ -97,7 +107,7 @@ function reset() {
   running = false;
   placeFood();
   updateHUD();
-  drawAll();  // show idle board & snake (game waits for Start)
+  drawAll();  // idle view until Start
 }
 function start() {
   if (running || over) return;
@@ -109,7 +119,8 @@ function pause() {
   clearTimeout(timer);
 }
 function restart() {
-  pause(); reset(); // stays idle until Start again
+  pause();
+  reset(); // remains idle until Start
 }
 function loop() {
   timer = setTimeout(() => {
@@ -118,23 +129,23 @@ function loop() {
   }, speedMs);
 }
 function step() {
-  // 1) apply next direction
+  // apply next direction
   dir = nextDir;
 
-  // 2) new head
+  // new head
   const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-  // 3) Nokia wrap (edges connect). For hard walls, remove wrap & add wall-collision.
+  // Nokia wrap
   head.x = (head.x + COLS) % COLS;
   head.y = (head.y + ROWS) % ROWS;
 
-  // 4) self-collision
+  // self-collision
   if (snake.some(s => s.x === head.x && s.y === head.y)) return gameOver();
 
-  // 5) move
+  // move
   snake.unshift(head);
 
-  // 6) food?
+  // eat?
   if (head.x === food.x && head.y === food.y) {
     score++;
     updateHUD();
@@ -143,7 +154,6 @@ function step() {
     snake.pop();
   }
 
-  // 7) draw
   drawAll();
 }
 function gameOver() {
@@ -156,16 +166,36 @@ function gameOver() {
   updateHUD();
 }
 
+// ===== D-pad highlight helper =====
+function flashArrow(dir){
+  const btn = document.querySelector(`.pad3d[data-dir="${dir}"]`);
+  if (!btn) return;
+  btn.classList.add("active");
+  setTimeout(()=>btn.classList.remove("active"), 150);
+}
+
 // ===== Inputs =====
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
+
+  // prevent page scroll on arrows/space
+  if (["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"," ","r"].includes(k)) {
+    e.preventDefault();
+  }
+
   if (k === " ") { running ? pause() : start(); return; }
   if (k === "r") { restart(); return; }
 
-  if (["arrowup","w"].includes(k)    && dir.y !== 1)  nextDir = {x:0,y:-1};
-  if (["arrowdown","s"].includes(k)  && dir.y !== -1) nextDir = {x:0,y:1};
-  if (["arrowleft","a"].includes(k)  && dir.x !== 1)  nextDir = {x:-1,y:0};
-  if (["arrowright","d"].includes(k) && dir.x !== -1) nextDir = {x:1,y:0};
+  if (["arrowup","w"].includes(k)    && dir.y !== 1)  { nextDir = {x:0,y:-1}; flashArrow("up"); }
+  if (["arrowdown","s"].includes(k)  && dir.y !== -1) { nextDir = {x:0,y:1};  flashArrow("down"); }
+  if (["arrowleft","a"].includes(k)  && dir.x !== 1)  { nextDir = {x:-1,y:0}; flashArrow("left"); }
+  if (["arrowright","d"].includes(k) && dir.x !== -1) { nextDir = {x:1,y:0};  flashArrow("right"); }
+
+  // optional: start when first direction key pressed
+  if (!running && !over &&
+      ["arrowup","arrowdown","arrowleft","arrowright","w","a","s","d"].includes(k)) {
+    start();
+  }
 });
 
 document.querySelectorAll(".pad3d").forEach(b=>{
@@ -175,12 +205,12 @@ document.querySelectorAll(".pad3d").forEach(b=>{
     if (d==="down" && dir.y !== -1) nextDir={x:0,y:1};
     if (d==="left" && dir.x !== 1)  nextDir={x:-1,y:0};
     if (d==="right" && dir.x !== -1)nextDir={x:1,y:0};
-    // auto-start when pressing a direction on touch controls
+    flashArrow(d);
     if (!running && !over) start();
   });
 });
 
-// simple swipe controls on the canvas
+// swipe controls
 let touchStart = null;
 canvas.addEventListener("touchstart", e=>{
   const t = e.touches[0]; touchStart = {x:t.clientX, y:t.clientY};
@@ -192,11 +222,11 @@ canvas.addEventListener("touchmove", e=>{
   const dy = t.clientY - touchStart.y;
   if (Math.abs(dx) + Math.abs(dy) < 24) return;
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && dir.x !== -1) nextDir = {x:1,y:0};
-    else if (dx < 0 && dir.x !== 1) nextDir = {x:-1,y:0};
+    if (dx > 0 && dir.x !== -1) nextDir = {x:1,y:0}, flashArrow("right");
+    else if (dx < 0 && dir.x !== 1) nextDir = {x:-1,y:0}, flashArrow("left");
   } else {
-    if (dy > 0 && dir.y !== -1) nextDir = {x:0,y:1};
-    else if (dy < 0 && dir.y !== 1) nextDir = {x:0,y:-1};
+    if (dy > 0 && dir.y !== -1) nextDir = {x:0,y:1}, flashArrow("down");
+    else if (dy < 0 && dir.y !== 1) nextDir = {x:0,y:-1}, flashArrow("up");
   }
   touchStart = null;
   if (!running && !over) start();
@@ -215,4 +245,5 @@ document.getElementById("btnPause").addEventListener("click", () => {
 
 // ===== Boot =====
 best = parseInt(localStorage.getItem("snake-best") || "0", 10);
-reset(); // Do NOT auto start; waits for Start
+reset(); // waits for Start
+

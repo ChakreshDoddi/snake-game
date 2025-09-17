@@ -1,0 +1,26 @@
+# Node / npm (if used in future)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+
+# OS junk files
+.DS_Store
+Thumbs.db
+
+# VS Code settings
+.vscode/
+
+# Build / Dist (future bundlers)
+dist/
+build/
+
+# Netlify / Vercel
+.netlify/
+.vercel/
+
+# Environment files
+.env
+.env.local
