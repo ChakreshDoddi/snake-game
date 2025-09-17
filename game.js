@@ -8,7 +8,7 @@ const bestEl  = document.getElementById("best");
 const COLS = 21;                     // logical grid is 21 x 21 (fixed)
 const ROWS = 21;
 let   CELL = 21;                     // pixel size per cell (computed on resize)
-let   speedMs = 140;                 // constant speed (ms per step)
+let   speedMs = 240;                 // constant speed (ms per step)
 
 // ===== Responsive canvas =====
 function resizeCanvas() {
